@@ -1,0 +1,17 @@
+# --- Virtual environments ---
+.venv/
+venv/
+env/
+
+# --- IDE / Editors ---
+.idea/
+
+# --- Logs ---
+*.log
+Backtest Logs/
+Engine Logs/
+
+# --- OBSISIAN --- 
+Brouillon/
+.obsidian
+
