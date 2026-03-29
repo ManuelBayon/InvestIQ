@@ -4,7 +4,6 @@ from datetime import datetime
 
 from investiq.market_data.domain.enums import BarSize, WhatToShow
 
-
 @dataclass
 class MarketDataRequest:
     bar_size: BarSize

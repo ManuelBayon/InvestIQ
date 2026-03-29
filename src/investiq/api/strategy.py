@@ -17,9 +17,6 @@ class StrategyMetadata:
 
     parameters: Mapping[str, object]
 
-    price_type: MarketField
-    required_fields: FrozenSet[MarketField]
-    required_pipelines: FrozenSet[str]
     required_features: FrozenSet[str]
 
     component_type: str = "STRATEGY"

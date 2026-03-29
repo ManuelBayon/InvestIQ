@@ -21,7 +21,7 @@ class TWSConnection:
         if self._connected:
             raise TWSConnectionError("Already connected")
 
-        self._logger.debug("Connecting to IBKR...")
+        self._logger.info("Connecting to IBKR...")
         self._ib.connect(
             host=self._config.host,
             port=self._config.port,
@@ -32,20 +32,20 @@ class TWSConnection:
             raise TWSConnectionError("Connection failed")
 
         self._connected = True
-        self._logger.debug("Connected to IBKR")
+        self._logger.info("Connected to IBKR.")
 
     def disconnect(self) -> None:
         if not self._connected:
             raise TWSConnectionError("No active connection")
 
-        self._logger.debug("Disconnecting from IBKR...")
+        self._logger.info("Disconnecting from IBKR...")
         self._ib.disconnect()
 
         if self._ib.isConnected():
             raise TWSConnectionError("Disconnection failed")
 
         self._connected = False
-        self._logger.debug("Disconnected from IBKR")
+        self._logger.info("Disconnected from IBKR.")
 
     @property
     def ib(self) -> IB:

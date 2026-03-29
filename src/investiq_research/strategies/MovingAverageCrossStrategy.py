@@ -21,11 +21,11 @@ class MovingAverageCrossStrategy:
             name="MovingAverageCross",
             version="1.0.0",
             description="...",
-            parameters={"fast_window": fast_window, "slow_window": slow_window},
-            price_type=MarketField.CLOSE,
-            required_fields=frozenset({MarketField.CLOSE}),
-            required_pipelines=frozenset({SMAPipeline.NAME}),
-            required_features=frozenset({"ma_fast", "ma_slow"}),
+            parameters={
+                "fast_window": fast_window,
+                "slow_window": slow_window
+            },
+            required_features=frozenset({SMAPipeline.NAME}),
         )
 
     def decide(self, view: BacktestView) -> Decision:

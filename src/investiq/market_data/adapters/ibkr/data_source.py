@@ -33,11 +33,10 @@ class IBKRHistoricalDataSource(HistoricalDataSource):
 
         query = build_ibkr_request(instrument, request)
 
-        self._logger.debug("Requesting IBKR historical data...")
-
         try:
+            self._logger.info("Fetching historical data from IBKR...")
             result = self._connection.ib.reqHistoricalData(**query)
         except Exception as e:
             raise TWSConnectionError(f"IBKR request failed: {e}") from e
-
+        self._logger.info("Historical data loaded.")
         return pd.DataFrame(result)

@@ -9,7 +9,6 @@ def main() -> None:
 
     # 2. Run the backtest
     result = bundle.backtest_engine.run(bt_input=bundle.backtest_input)
-    print("[Backtest Engine]: Run success.")
 
     # 3. Export fill log
     bundle.exporter.export(

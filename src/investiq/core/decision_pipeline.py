@@ -16,8 +16,8 @@ class DecisionPipeline:
             filters: Sequence[Filter] | None = None,
     ):
         # 1. Configuration validation
-        required = strategy.metadata.required_pipelines
-        missing = required - available_feature_pipelines
+
+        missing = strategy.metadata.required_features - available_feature_pipelines
         if missing:
             raise ValueError(
                 f"Strategy '{strategy.metadata.name}' requires unknown pipelines: {sorted(missing)}."

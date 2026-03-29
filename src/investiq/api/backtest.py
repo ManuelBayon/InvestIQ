@@ -1,10 +1,10 @@
 from collections.abc import Iterable
 from dataclasses import dataclass
 
-from investiq.api.feature import FeatureSnapshot
 from investiq.api.instruments import Instrument
 from investiq.api.market import MarketDataEvent, MarketSateView
 from investiq.api.portfolio import PortfolioView
+from investiq.core.features import FeatureSnapshot
 
 
 @dataclass(frozen=True)

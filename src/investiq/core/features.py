@@ -1,26 +1,48 @@
 from collections import defaultdict
-from collections.abc import Sequence
-from typing import Protocol, ClassVar, TypeVar, Final, FrozenSet
+from collections.abc import Sequence, Mapping
+from dataclasses import dataclass
+from typing import TypeVar, Final, FrozenSet, Protocol, ClassVar
 
-from investiq.api.feature import FeatureHistoryReader, FeatureSnapshot
 from investiq.core.market_store import MarketStateStore
 
-class FeaturePipeline(Protocol):
-    """
-    FeaturePipeline protocol.
-    """
-    NAME: ClassVar[str]
-    def reset(self) -> None:
-        ...
-    def update(
-            self,
-            *,
-            market_store: MarketStateStore,
-            feature_store: "FeatureStore",
-    ) -> None:
-        ...
 
-class InMemoryFeatureHistoryView(FeatureHistoryReader):
+class FeatureReader(Protocol):
+    def latest(self, name: str) -> float: ...
+    def window(self, name: str, n: int) -> tuple[float, ...]: ...
+    def series(self, name: str) -> Sequence[float]: ...
+    def names(self) -> tuple[str, ...]: ...
+
+@dataclass(frozen=True)
+class FeatureSnapshot:
+    """
+    Read-only feature snapshot for runtime consumers.
+
+    - values: latest scalar values
+    - history: read-only accessor over feature histories
+    - pipeline_ready: per-pipeline readiness at current step
+    - global_ready: all pipelines ready
+    """
+    values: Mapping[str, float]
+    history: FeatureReader
+    pipeline_ready: Mapping[str, bool]
+    global_ready: bool
+
+    def require(self, name: str) -> float:
+        v = self.values.get(name)
+        if v is None:
+            raise KeyError(f"Missing feature: {name}")
+        return v
+
+    def __getitem__(self, name: str) -> float:
+        return self.require(name)
+
+    def pipeline_is_ready(self, pipeline: str) -> bool:
+        v = self.pipeline_ready.get(pipeline)
+        if v is None:
+            raise KeyError(f"Unknown pipeline: {pipeline}")
+        return bool(v)
+
+class InMemoryFeatureHistoryView(FeatureReader):
     """
     Read-only façade over feature history storage.
     """
@@ -50,8 +72,22 @@ class InMemoryFeatureHistoryView(FeatureHistoryReader):
     def names(self) -> tuple[str, ...]:
         return tuple(self._history.keys())
 
-T = TypeVar('T', bound='FeaturePipeline')
+class FeaturePipeline(Protocol):
+    """
+    FeaturePipeline protocol.
+    """
+    NAME: ClassVar[str]
+    def reset(self) -> None:
+        ...
+    def update(
+            self,
+            *,
+            market_store: MarketStateStore,
+            feature_store: "FeatureStore",
+    ) -> None:
+        ...
 
+T = TypeVar('T', bound=FeaturePipeline)
 
 class FeaturePipelineRegistry:
 

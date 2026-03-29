@@ -89,7 +89,7 @@ class BacktestEngine:
         # 2. Build pre-trade read-only view
         view_before: BacktestView = self._build_view()
 
-        # 3. Run decision and planner pipeline
+        # 3. Run decision pipeline
         decision = self._decision_pipeline.run(view=view_before)
 
         # 5. Pure transition computation
@@ -123,7 +123,7 @@ class BacktestEngine:
         event_count: int = 0
 
         # 2. Main loop over the events
-        print("[Backtest Engine]: Running...")
+        self._logger.info("Running ...")
         for event in bt_input.events:
             event_count += 1
             step_record = self.step(event=event)
@@ -139,6 +139,7 @@ class BacktestEngine:
         final_view = self._build_view()
         end_time = time.perf_counter()
         runtime_duration = end_time - start_time
+        self._logger.info("Run success.")
 
         # 5. Export run artefact
         return RunResult(

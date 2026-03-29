@@ -60,7 +60,7 @@ class DataFrameBacktestFeed:
 
         # Local reference to the dataframe
         df = self._df
-        self._logger.debug(f"FEED events={len(df)}")
+        self._logger.info(f"FEED events={len(df)}")
 
         for row in df.itertuples():
             ts = row.Index
