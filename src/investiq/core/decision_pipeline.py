@@ -11,31 +11,25 @@ class DecisionPipeline:
 
     def __init__(
             self,
-            available_feature_pipelines: FrozenSet[str],
             strategy: Strategy,
             filters: Sequence[Filter] | None = None,
     ):
-        # 1. Configuration validation
-
-        missing = strategy.metadata.required_features - available_feature_pipelines
-        if missing:
-            raise ValueError(
-                f"Strategy '{strategy.metadata.name}' requires unknown pipelines: {sorted(missing)}."
-                f"Available pipelines: {sorted(available_feature_pipelines)}"
-            )
         self._strategy = strategy
         self._filters = list(filters) if filters else []
 
-    def run(self, *, view: BacktestView) -> Decision:
+    def run(
+            self,
+            *,
+            view: BacktestView
+    ) -> Decision:
 
-        d0 = self._strategy.decide(view=view)
+        d = self._strategy.decide(backtest_view=view)
 
         diagnostics = {
-            "strategy": {self._strategy.metadata.name: d0.diagnostics},
+            "strategy": {self._strategy.metadata.name: d.diagnostics},
             "filters": []
         }
 
-        d = d0
         for f in self._filters:
             d = f.apply(view=view, decision=d)
             diagnostics["filters"].append({f.metadata.name: d.diagnostics})

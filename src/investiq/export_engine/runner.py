@@ -7,7 +7,7 @@ from investiq.export_engine.factory import ExportServiceFactory
 from investiq.export_engine.registries.config import ExportKey, ExportOptions
 
 from investiq.utilities.logger.factory import LoggerFactory
-from investiq.execution.portfolio.types import Fill
+from investiq.api.portfolio import Fill
 
 
 class BacktestExportRunner:

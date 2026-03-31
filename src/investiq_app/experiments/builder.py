@@ -2,20 +2,18 @@ from dataclasses import dataclass
 from datetime import datetime
 
 from investiq.api.config import BacktestConfig
-from investiq.market_data import (
-    HistoricalDataService,
-    DataFrameBacktestFeed,
-    TWSConnection,
-    ConnectionConfig,
-    IBKRHistoricalDataSource,
-    HistoricalRequestSpec,
-)
 
 from investiq.api.backtest import BacktestInput
 from investiq.core.backtest_engine import BacktestEngine
 
 from investiq.export_engine.registries.config import ExportKey, ExportOptions
 from investiq.export_engine.runner import BacktestExportRunner
+from investiq.market_data.adapters.ibkr.connection_config import ConnectionConfig
+from investiq.market_data.adapters.ibkr.data_source import IBKRHistoricalDataSource
+from investiq.market_data.adapters.ibkr.tws_connection import TWSConnection
+from investiq.market_data.domain.requests.historical import HistoricalRequestSpec
+from investiq.market_data.engine.service import HistoricalDataService
+from investiq.market_data.feeds.dataframe_feed import DataFrameBacktestFeed
 
 from investiq.utilities.logger.factory import LoggerFactory
 from investiq.utilities.logger.setup import init_base_logger
@@ -74,6 +72,7 @@ def build_experiment(config: BacktestConfig) -> BacktestBundle:
     backtest_engine: BacktestEngine = bootstrap_backtest_engine(
         logger_factory=logger_factory,
         instrument=config.instrument,
+        feature_calculators=config.feature_calculators,
         strategy=config.strategy,
         filters=config.filters,
         initial_cash=config.initial_cash
@@ -83,7 +82,7 @@ def build_experiment(config: BacktestConfig) -> BacktestBundle:
     feed = DataFrameBacktestFeed(
         logger=logger_factory.child("BacktestFeed").get(),
         df=df,
-        symbol=config.instrument.symbol,
+        instrument=config.instrument,
         bar_size=config.market_data_request.bar_size,
     )
     bt_input = BacktestInput(

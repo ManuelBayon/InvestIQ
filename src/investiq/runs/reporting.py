@@ -2,7 +2,7 @@ from collections.abc import Mapping
 
 from investiq.api.config import BacktestConfig
 from investiq.api.execution import RunResult
-from investiq.execution.transition.enums import FIFOSide
+from investiq.core.transition_engine.enums import FIFOSide
 
 
 def line(label: str, value: str, width: int = 25) -> str:
@@ -93,7 +93,7 @@ def print_backtest_summary(
     print(line("Nb. Parameters", str(len(config.strategy.metadata.parameters))))
     for param_line in format_parameters(config.strategy.metadata.parameters):
         print(param_line)
-    print(line("Required Pipelines", ", ".join(config.strategy.metadata.required_features)))
+    print(line("Required Pipelines", ", ".join(config.strategy.metadata.required_feature_names)))
 
 
     print("")

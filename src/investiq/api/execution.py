@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 import pandas as pd
 
 from investiq.api.instruments import Instrument
-from investiq.execution.portfolio.types import Fill
+from investiq.api.portfolio import Fill
 
 
 @dataclass(frozen=True)

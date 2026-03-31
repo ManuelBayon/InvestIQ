@@ -1,9 +1,13 @@
-from collections.abc import Sequence, Mapping
+from collections.abc import Sequence
 from dataclasses import dataclass
 from enum import StrEnum
 from typing import Protocol
 
 import pandas as pd
+
+from investiq.api.instruments import Instrument
+from investiq.market_data.domain.enums import BarSize
+
 
 class MarketField(StrEnum):
     OPEN = "open"
@@ -37,24 +41,23 @@ class OHLCV:
 class MarketDataEvent:
     timestamp: pd.Timestamp
     bar: OHLCV
-    symbol: str | None = None
-    bar_size: str | None = None
+    instrument: Instrument
+    bar_size: BarSize
+
+
 
 class MarketHistoryReader(Protocol):
-    def latest(self, field: MarketField) -> float:...
-    def window(self, field: MarketField, n: int) -> tuple[float, ...]:...
-    def series(self, field: MarketField) -> Sequence[float]: ...
-    def fields(self) -> tuple[MarketField, ...]:...
+    def latest(self) -> MarketDataEvent:...
+    def window(self, n: int) -> Sequence[MarketDataEvent]:...
+    def series(self) -> Sequence[MarketDataEvent]: ...
     def __len__(self) -> int:...
 
 @dataclass(frozen=True)
-class MarketSateView:
-    snapshot: MarketDataEvent
+class MarketView:
     history: MarketHistoryReader
     @property
-    def timestamp(self) -> pd.Timestamp:
-        return self.snapshot.timestamp
-
-    @property
     def bar(self) -> OHLCV:
-        return self.snapshot.bar
+        return self.history.latest().bar
+    @property
+    def timestamp(self) -> pd.Timestamp:
+        return self.history.latest().timestamp

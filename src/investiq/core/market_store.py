@@ -1,60 +1,51 @@
-from collections.abc import Sequence
-
-from investiq.api.market import MarketDataEvent, MarketField, MarketHistoryReader, MarketSateView
+from investiq.api.market import MarketDataEvent, MarketHistoryReader, MarketView
 from investiq.api.errors import ContextNotInitializedError
 
 class InMemoryMarketHistoryView(MarketHistoryReader):
     """
     Reads-only facade over internal market history storage.
-    No full-history copy on each read.
+    No full-history copy on each read using latest() or window().
     """
-    def __init__(self, history: dict[MarketField, list[float]]) -> None:
+    def __init__(
+            self,
+            history: list[MarketDataEvent]
+    ) -> None:
         self._history = history
 
-    def latest(self, field: MarketField) -> float:
-        seq = self._history.get(field)
-        if seq is None:
-            raise KeyError(f"No data for field={field}")
-        return seq[-1]
+    def latest(self) -> MarketDataEvent:
+        if not self._history:
+            raise KeyError("No enough data for n=0")
+        return self._history[-1]
 
-    def window(self, field: MarketField, n: int) -> tuple[float, ...]:
+    def window(self, n: int) -> tuple[MarketDataEvent, ...]:
         if n <= 0:
             raise IndexError(f"n={n} must be > 0")
-        seq = self._history.get(field)
-        if seq is None:
-            raise KeyError(f"No data for field={field}")
-        return tuple(seq[-n:])
+        seq = self._history[-n:]
+        if not seq:
+            raise KeyError(f"No enough data for n={n}")
+        return tuple(seq)
 
-    def series(self, field: MarketField) -> Sequence[float]:
-        seq = self._history.get(field)
-        if seq is None:
-            raise KeyError(f"No data for field={field}")
+    def series(self) -> tuple[MarketDataEvent, ...]:
+        seq = self._history
+        if not seq:
+            raise KeyError(f"No enough data.")
         return tuple(seq)
 
     def __len__(self) -> int:
-        if not self._history:
-            return 0
-        first = next(iter(self._history.values()))
-        return len(first)
+        return len(self._history)
 
 class MarketStateStore:
     """
     Internal mutable runtime store for market state.
     """
     def __init__(self):
-        self._snapshot: MarketDataEvent | None = None
-        self._history: dict[MarketField, list[float]] = {}
+        self._history: list[MarketDataEvent] = []
         self._history_view = InMemoryMarketHistoryView(self._history)
 
     def ingest(self, event: MarketDataEvent) -> None:
-        self._snapshot = event
-        for k, v in event.bar.items():
-            self._history.setdefault(MarketField(k), []).append(v)
+        self._history.append(event)
 
-    def view(self) -> MarketSateView:
-        if self._snapshot is None:
+    def view(self) -> MarketView:
+        if not self._history:
             raise ContextNotInitializedError("No MarketEvent processed yet")
-        return MarketSateView(
-            snapshot=self._snapshot,
-            history=self._history_view,
-        )
+        return MarketView(history=self._history_view)

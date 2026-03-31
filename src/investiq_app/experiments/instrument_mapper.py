@@ -1,6 +1,10 @@
 from investiq.api.instruments import Instrument
-from investiq.market_data import AssetType, ContFutureSpec, InstrumentID, StockSpec, ForexSpec
+from investiq.market_data.domain.enums import AssetType
+from investiq.market_data.domain.instrument_id import InstrumentID
 from investiq.market_data.domain.instruments.base import ProviderInstrumentSpec
+from investiq.market_data.domain.instruments.cont_future import ContFutureSpec
+from investiq.market_data.domain.instruments.forex import ForexSpec
+from investiq.market_data.domain.instruments.stock import StockSpec
 
 
 def to_provider_instrument(instrument: Instrument) -> ProviderInstrumentSpec:

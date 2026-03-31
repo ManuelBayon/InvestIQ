@@ -1,9 +1,6 @@
 from investiq.api.backtest import BacktestView
 from investiq.api.execution import Decision
-from investiq.api.market import MarketField
 from investiq.api.strategy import StrategyMetadata
-from investiq_research.features.SMA import SMAPipeline
-
 
 class MovingAverageCrossStrategy:
 
@@ -25,31 +22,42 @@ class MovingAverageCrossStrategy:
                 "fast_window": fast_window,
                 "slow_window": slow_window
             },
-            required_features=frozenset({SMAPipeline.NAME}),
+            required_feature_names=(
+                f"sma_{fast_window}",
+                f"sma_{slow_window}"
+            )
         )
+        self._fast_window = fast_window
+        self._slow_window = slow_window
 
-    def decide(self, view: BacktestView) -> Decision:
+    def decide(
+            self,
+            backtest_view: BacktestView
+    ) -> Decision:
 
-        ts = view.market_view.timestamp
-        close = view.market_view.bar.close
-        fv = view.features_view
+        ts = backtest_view.market_view.timestamp
+        close = backtest_view.market_view.bar.close
+        diagnostics = {}
 
-        pipeline = SMAPipeline.NAME
-
-        # Gate on pipeline readiness (this tick)
-        if not fv.pipeline_is_ready(pipeline):
+        if not backtest_view.features_view.has(self.metadata.required_feature_names[0]):
+            diagnostics[f"sma_{self._fast_window}"] = "Not available"
             return Decision(
                 timestamp=ts,
                 target_position=0.0,
                 execution_price=close,
-                diagnostics={
-                    "warming_up": True,
-                    "pipeline": pipeline,
-                },
+                diagnostics=diagnostics
+            )
+        elif not backtest_view.features_view.has():
+            diagnostics[f"sma_{self._slow_window}"] = "Not available"
+            return Decision(
+                timestamp=ts,
+                target_position=0.0,
+                execution_price=close,
+                diagnostics=diagnostics
             )
 
-        ma_fast = fv.require("ma_fast")
-        ma_slow = fv.require("ma_slow")
+        ma_fast = backtest_view.features_view.require(f"sma_{self._fast_window}")
+        ma_slow = backtest_view.features_view.require(f"sma_{self._slow_window}")
 
         if ma_fast > ma_slow:
             target = 1.0
