@@ -35,3 +35,7 @@ class RunResult:
     metrics: Mapping[str, float]
     fill_log: Sequence[Fill]
     diagnostics: Mapping[str, object] = field(default_factory=dict)
+
+@dataclass(frozen=True)
+class DecisionStep:
+    ...

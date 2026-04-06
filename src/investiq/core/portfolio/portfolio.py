@@ -2,11 +2,11 @@ from collections import defaultdict
 
 from investiq.api.instruments import Instrument
 from investiq.api.portfolio import PortfolioView
-from investiq.core.portfolio.view import InMemoryPositionBookView
+from investiq.core.order_book import InMemoryPositionBookView
 from investiq.utilities.logger.factory import LoggerFactory
 from investiq.utilities.logger.protocol import LoggerProtocol
-from investiq.core.portfolio.execution.api import PortfolioExecutionStrategy, PortfolioProtocol
-from investiq.core.portfolio.execution.factory import PortfolioExecutionFactory
+from investiq.core.portfolio.api import PortfolioExecutionStrategy, PortfolioProtocol
+from investiq.core.portfolio.factory import PortfolioExecutionFactory
 from investiq.api.portfolio import Fill
 from investiq.core.transition_engine.enums import FIFOSide
 from investiq.core.transition_engine.types import FIFOPosition, FIFOOperation
@@ -52,6 +52,7 @@ class Portfolio(PortfolioProtocol):
             )
             self.append_log_entry(fill)
 
+    @property
     def view(self) -> PortfolioView:
         return PortfolioView(
             instrument=self.instrument,

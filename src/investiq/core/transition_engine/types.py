@@ -63,7 +63,7 @@ class FIFOOperation:
 @dataclass(frozen=True)
 class ResolveContext:
     """
-    Unchanging context passed to SafeGuards strategies.
+    Unchanging context passed to SafeGuards transitions.
     Combines action, fifo status, and execution price for deterministic checks
     with no side effects.
     """

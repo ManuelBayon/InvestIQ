@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from typing import Callable, TypeVar, cast
 
 from investiq.core.transition_engine.enums import AtomicActionType

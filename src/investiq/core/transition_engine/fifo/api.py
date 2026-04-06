@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from typing import ClassVar, Protocol
 
 from investiq.api.portfolio import PositionBookReader

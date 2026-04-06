@@ -1,6 +1,6 @@
 from investiq.core.transition_engine.enums import AtomicActionType
-from .api import FIFOResolveStrategy
-from .registry import FIFOResolveRegistry
+from investiq.core.transition_engine.fifo.api import FIFOResolveStrategy
+from investiq.core.transition_engine.fifo.registry import FIFOResolveRegistry
 
 
 class FIFOResolveFactory:

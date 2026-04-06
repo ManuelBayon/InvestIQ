@@ -1,6 +1,6 @@
 from typing import Callable, TypeVar
 from investiq.core.transition_engine.enums import TransitionType
-from investiq.core.transition_engine.strategies.api import TransitionStrategy
+from investiq.core.transition_engine.transitions.api import TransitionStrategy
 
 T = TypeVar("T", bound=TransitionStrategy)
 

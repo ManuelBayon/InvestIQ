@@ -10,7 +10,7 @@ backtest_config = BacktestConfig(
     instrument=InstrumentFactory.cont_future(symbol="MNQ"),
     market_data_request=MarketDataRequest(
         bar_size=BarSize.ONE_HOUR,
-        duration="1 Y"
+        duration="6 M"
     ),
     feature_calculators=[
         SMA(window=20),

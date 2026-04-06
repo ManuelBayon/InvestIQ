@@ -1,6 +1,6 @@
 from investiq.core.transition_engine.enums import TransitionType
-from investiq.core.transition_engine.strategies.api import TransitionStrategy
-from investiq.core.transition_engine.strategies.registry import TransitionStrategyRegistry
+from investiq.core.transition_engine.transitions.api import TransitionStrategy
+from investiq.core.transition_engine.transitions.registry import TransitionStrategyRegistry
 
 
 class TransitionStrategyFactory:

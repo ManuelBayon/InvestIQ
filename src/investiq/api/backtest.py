@@ -1,11 +1,15 @@
 from collections.abc import Iterable
 from dataclasses import dataclass
+from typing import NewType
+
+import pandas as pd
 
 from investiq.api.features import FeatureView
 from investiq.api.instruments import Instrument
 from investiq.api.market import MarketDataEvent, MarketView
 from investiq.api.portfolio import PortfolioView
 
+RunId = NewType("RunId", str)
 
 @dataclass(frozen=True)
 class BacktestInput:
@@ -15,8 +19,6 @@ class BacktestInput:
 @dataclass(frozen=True)
 class BacktestView:
     """
-    The ONLY object passed to strategies/orchestrator.
-    Read-only contract: strategies cannot mutate the world.
     """
     market_view: MarketView
     features_view: FeatureView

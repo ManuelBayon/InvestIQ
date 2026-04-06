@@ -1,5 +1,6 @@
 from collections.abc import Sequence
 
+from investiq.api.backtest import RunId
 from investiq.api.features import FeatureCalculator
 from investiq.api.filter import Filter
 from investiq.api.instruments import Instrument
@@ -47,6 +48,7 @@ def bootstrap_backtest_engine(
 
     # 4. Build Backtest Engine
     return BacktestEngine(
+        run_id=RunId("abc"),
         logger_factory=logger_factory,
         market_store=market_store,
         feature_store=feature_store,

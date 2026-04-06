@@ -77,6 +77,7 @@ class DataFrameBacktestFeed:
                 raise ValueError(f"Invalid OHLC at {ts}")
 
             yield MarketDataEvent(
+                event_id="abc",
                 timestamp=ts,
                 bar=OHLCV(open=o, high=h, low=l, close=c, volume=v),
                 instrument=self._instrument,

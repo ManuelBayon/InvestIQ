@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from typing import ClassVar, Final
 
 from investiq.api.portfolio import PositionBookReader
@@ -8,8 +6,8 @@ from investiq.core.transition_engine.enums import (
     FIFOSide,
     FIFOOperationType,
 )
+from investiq.core.transition_engine.fifo.registry import register_fifo_resolve_strategy
 from investiq.core.transition_engine.types import AtomicAction, FIFOOperation
-from .registry import register_fifo_resolve_strategy
 
 
 _EPS: Final[float] = 0.0

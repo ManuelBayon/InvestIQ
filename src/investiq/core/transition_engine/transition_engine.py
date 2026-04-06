@@ -7,8 +7,8 @@ from investiq.core.transition_engine.types import TransitionLog
 from investiq.core.transition_engine.rules.api import TransitionRule
 from investiq.core.transition_engine.rules.classifier import compute_key
 from investiq.core.transition_engine.rules.factory import TransitionRuleFactory
-from investiq.core.transition_engine.strategies.api import TransitionStrategy
-from investiq.core.transition_engine.strategies.factory import TransitionStrategyFactory
+from investiq.core.transition_engine.transitions.api import TransitionStrategy
+from investiq.core.transition_engine.transitions.factory import TransitionStrategyFactory
 from investiq.core.transition_engine.types import FIFOOperation, AtomicAction
 
 

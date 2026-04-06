@@ -8,7 +8,7 @@ from investiq.core.transition_engine.fifo.factory import FIFOResolveFactory
 class FIFOResolver:
     """
     Orchestrator: AtomicAction -> FIFOOperation(s).
-    Delegates per-action resolution to registered FIFO resolve strategies.
+    Delegates per-action resolution to registered FIFO resolve transitions.
     """
 
     def __init__(self) -> None:

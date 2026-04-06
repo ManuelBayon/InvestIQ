@@ -33,18 +33,13 @@ class OHLCV:
     def __contains__(self, key: object) -> bool:
         return isinstance(key, str) and hasattr(self, key)
 
-    def items(self):
-        for k in ("open","high","low","close","volume"):
-            yield k, getattr(self, k)
-
 @dataclass(frozen=True)
 class MarketDataEvent:
+    event_id: str
     timestamp: pd.Timestamp
     bar: OHLCV
     instrument: Instrument
     bar_size: BarSize
-
-
 
 class MarketHistoryReader(Protocol):
     def latest(self) -> MarketDataEvent:...
@@ -54,10 +49,14 @@ class MarketHistoryReader(Protocol):
 
 @dataclass(frozen=True)
 class MarketView:
-    history: MarketHistoryReader
+    _reader: MarketHistoryReader
     @property
-    def bar(self) -> OHLCV:
-        return self.history.latest().bar
+    def event_id(self) -> str:
+        return self._reader.latest().event_id
     @property
     def timestamp(self) -> pd.Timestamp:
-        return self.history.latest().timestamp
+        return self._reader.latest().timestamp
+    @property
+    def bar(self) -> OHLCV:
+        return self._reader.latest().bar
+

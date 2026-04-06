@@ -9,10 +9,23 @@ class MovingAverageCrossStrategy:
             fast_window: int = 20,
             slow_window: int = 100
     ):
-        if fast_window <= 0 or slow_window <= 0:
-            raise ValueError("fast_window and slow_window must be positive")
-        if fast_window >= slow_window:
-            raise ValueError("fast_window must be < slow_window for a classic MA cross")
+        if fast_window <= 0 :
+            raise ValueError(
+                f"fast_window must be positive, got n={fast_window}"
+            )
+        if slow_window <= 0:
+            raise ValueError(
+                f"slow window must be positive, got n={slow_window}"
+            )
+        if not fast_window < slow_window:
+            raise ValueError(
+                f"fast_window must be < slow_window, got"
+                f" fast={fast_window}, "
+                f" slow={slow_window}."
+            )
+
+        self._fast_sma_key = f"sma_{fast_window}"
+        self._slow_sma_key = f"sma_{slow_window}"
 
         self.metadata = StrategyMetadata(
             name="MovingAverageCross",
@@ -23,32 +36,33 @@ class MovingAverageCrossStrategy:
                 "slow_window": slow_window
             },
             required_feature_names=(
-                f"sma_{fast_window}",
-                f"sma_{slow_window}"
+                self._fast_sma_key,
+                self._slow_sma_key
             )
         )
-        self._fast_window = fast_window
-        self._slow_window = slow_window
 
     def decide(
             self,
             backtest_view: BacktestView
     ) -> Decision:
 
+        # 1. Initialization
         ts = backtest_view.market_view.timestamp
         close = backtest_view.market_view.bar.close
-        diagnostics = {}
+        features_view = backtest_view.features_view
+        diagnostics: dict[str, object] = {}
 
-        if not backtest_view.features_view.has(self.metadata.required_feature_names[0]):
-            diagnostics[f"sma_{self._fast_window}"] = "Not available"
+        # 2. Warmup
+        if not features_view.is_ready(self._fast_sma_key):
+            diagnostics[self._fast_sma_key] = "Not available"
             return Decision(
                 timestamp=ts,
                 target_position=0.0,
                 execution_price=close,
                 diagnostics=diagnostics
             )
-        elif not backtest_view.features_view.has():
-            diagnostics[f"sma_{self._slow_window}"] = "Not available"
+        if not features_view.is_ready(self._slow_sma_key):
+            diagnostics[self._slow_sma_key] = "Not available"
             return Decision(
                 timestamp=ts,
                 target_position=0.0,
@@ -56,9 +70,11 @@ class MovingAverageCrossStrategy:
                 diagnostics=diagnostics
             )
 
-        ma_fast = backtest_view.features_view.require(f"sma_{self._fast_window}")
-        ma_slow = backtest_view.features_view.require(f"sma_{self._slow_window}")
+        # 3. Get features
+        ma_fast = features_view.require(self._fast_sma_key)
+        ma_slow = features_view.require(self._slow_sma_key)
 
+        # 4. Compute target position
         if ma_fast > ma_slow:
             target = 1.0
         elif ma_fast < ma_slow:
@@ -66,6 +82,7 @@ class MovingAverageCrossStrategy:
         else:
             target = 0.0
 
+        # 5. Return Decision
         return Decision(
             timestamp=ts,
             target_position=target,

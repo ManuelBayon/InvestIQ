@@ -1,7 +1,7 @@
 """
-investiq/execution/transition_engine/strategies/builtins.py
+investiq/execution/transition_engine/transitions/builtins.py
 
-Concrete built-in transition_engine strategies (single-file).
+Concrete built-in transition_engine transitions (single-file).
 Goal: onboarding-friendly, desk-grade invariants, minimal moving parts.
 
 Contract:
@@ -18,9 +18,11 @@ from __future__ import annotations
 from datetime import datetime
 from typing import ClassVar, Final
 
+import pandas as pd
+
 from investiq.core.transition_engine.enums import AtomicActionType, TransitionType
 from investiq.core.transition_engine.types import AtomicAction
-from investiq.core.transition_engine.strategies.registry import register_transition_strategy
+from investiq.core.transition_engine.transitions.registry import register_transition_strategy
 
 
 # -----------------------------
@@ -35,24 +37,24 @@ def _require(cond: bool, msg: str) -> None:
         raise ValueError(msg)
 
 
-def _close_long(*, qty: float, ts: datetime) -> AtomicAction:
+def _close_long(*, qty: float, ts: pd.Timestamp) -> AtomicAction:
     return AtomicAction(type=AtomicActionType.CLOSE_LONG, quantity=qty, timestamp=ts)
 
 
-def _open_long(*, qty: float, ts: datetime) -> AtomicAction:
+def _open_long(*, qty: float, ts: pd.Timestamp) -> AtomicAction:
     return AtomicAction(type=AtomicActionType.OPEN_LONG, quantity=qty, timestamp=ts)
 
 
-def _close_short(*, qty: float, ts: datetime) -> AtomicAction:
+def _close_short(*, qty: float, ts: pd.Timestamp) -> AtomicAction:
     return AtomicAction(type=AtomicActionType.CLOSE_SHORT, quantity=qty, timestamp=ts)
 
 
-def _open_short(*, qty: float, ts: datetime) -> AtomicAction:
+def _open_short(*, qty: float, ts: pd.Timestamp) -> AtomicAction:
     return AtomicAction(type=AtomicActionType.OPEN_SHORT, quantity=qty, timestamp=ts)
 
 
 # -----------------------------
-# Concrete strategies (registered)
+# Concrete transitions (registered)
 # -----------------------------
 
 @register_transition_strategy(TransitionType.NO_OP)
@@ -64,7 +66,7 @@ class NoOpStrategy:
     def resolve(
         self,
         *,
-        timestamp: datetime,
+        timestamp: pd.Timestamp,
         current_position: float,
         target_position: float,
     ) -> list[AtomicAction]:
@@ -85,7 +87,7 @@ class OpenLongStrategy:
     def resolve(
         self,
         *,
-        timestamp: datetime,
+        timestamp: pd.Timestamp,
         current_position: float,
         target_position: float,
     ) -> list[AtomicAction]:
@@ -110,7 +112,7 @@ class OpenShortStrategy:
     def resolve(
         self,
         *,
-        timestamp: datetime,
+        timestamp: pd.Timestamp,
         current_position: float,
         target_position: float,
     ) -> list[AtomicAction]:
@@ -135,7 +137,7 @@ class CloseLongStrategy:
     def resolve(
         self,
         *,
-        timestamp: datetime,
+        timestamp: pd.Timestamp,
         current_position: float,
         target_position: float,
     ) -> list[AtomicAction]:
@@ -160,7 +162,7 @@ class CloseShortStrategy:
     def resolve(
         self,
         *,
-        timestamp: datetime,
+        timestamp: pd.Timestamp,
         current_position: float,
         target_position: float,
     ) -> list[AtomicAction]:
@@ -185,7 +187,7 @@ class IncreaseLongStrategy:
     def resolve(
         self,
         *,
-        timestamp: datetime,
+        timestamp: pd.Timestamp,
         current_position: float,
         target_position: float,
     ) -> list[AtomicAction]:
@@ -211,7 +213,7 @@ class IncreaseShortStrategy:
     def resolve(
         self,
         *,
-        timestamp: datetime,
+        timestamp: pd.Timestamp,
         current_position: float,
         target_position: float,
     ) -> list[AtomicAction]:
@@ -237,7 +239,7 @@ class ReduceLongStrategy:
     def resolve(
         self,
         *,
-        timestamp: datetime,
+        timestamp: pd.Timestamp,
         current_position: float,
         target_position: float,
     ) -> list[AtomicAction]:
@@ -267,7 +269,7 @@ class ReduceShortStrategy:
     def resolve(
         self,
         *,
-        timestamp: datetime,
+        timestamp: pd.Timestamp,
         current_position: float,
         target_position: float,
     ) -> list[AtomicAction]:
@@ -299,7 +301,7 @@ class ReversalToLongStrategy:
     def resolve(
         self,
         *,
-        timestamp: datetime,
+        timestamp: pd.Timestamp,
         current_position: float,
         target_position: float,
     ) -> list[AtomicAction]:
@@ -329,7 +331,7 @@ class ReversalToShortStrategy:
     def resolve(
         self,
         *,
-        timestamp: datetime,
+        timestamp: pd.Timestamp,
         current_position: float,
         target_position: float,
     ) -> list[AtomicAction]:

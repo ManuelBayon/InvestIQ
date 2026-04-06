@@ -3,7 +3,8 @@ from typing import List
 
 import pandas as pd
 
-from investiq.api.backtest import BacktestView, BacktestInput
+from investiq.api.backtest import BacktestView, BacktestInput, RunId
+from investiq.api.events import StepContext
 from investiq.api.execution import RunResult
 from investiq.api.market import MarketDataEvent
 from investiq.api.errors import BacktestInvariantError
@@ -21,6 +22,7 @@ class BacktestEngine:
 
     def __init__(
             self,
+            run_id: RunId,
             logger_factory: LoggerFactory,
             market_store: MarketStateStore,
             feature_store: FeatureStore,
@@ -29,6 +31,9 @@ class BacktestEngine:
             portfolio: Portfolio,
     ):
         self._logger = logger_factory.child("BacktestEngine").get()
+
+        self._run_id: RunId = run_id
+        self._next_step_sequence: int = 0
 
         self._market_store = market_store
         self._feature_store = feature_store
@@ -39,14 +44,14 @@ class BacktestEngine:
 
     def _build_view(self) -> BacktestView:
         return BacktestView(
-            market_view=self._market_store.view(),
-            features_view=self._feature_store.view(),
-            portfolio_view=self._portfolio.view(),
+            market_view=self._market_store.view,
+            features_view=self._feature_store.view,
+            portfolio_view=self._portfolio.view,
         )
 
     def _build_metrics(self) -> dict[str, float]:
-        portfolio_view = self._portfolio.view()
-        market_view = self._market_store.view()
+        portfolio_view = self._portfolio.view
+        market_view = self._market_store.view
         last_price = market_view.bar.close
         unrealized_pnl = self._compute_unrealized_pnl(market_price=last_price)
         net_liquidation_value = portfolio_view.cash + unrealized_pnl
@@ -75,35 +80,50 @@ class BacktestEngine:
                 total += pnl
         return total
 
+    def _build_step_context(self, event: MarketDataEvent) -> StepContext:
+        return StepContext(
+            run_id=self._run_id,
+            step_sequence=self._next_step_sequence,
+            source_event_id=event.event_id,
+            market_timestamp=event.timestamp,
+        )
 
-    def step(self, market_data_event: MarketDataEvent) -> StepRecord:
+    def step(self, event: MarketDataEvent) -> StepRecord:
 
-        # 1. Update market store
-        self._market_store.ingest(event=market_data_event)
+        # . Build step context
+        step_context = self._build_step_context(event)
 
-        # 2. Update feature store
-        self._feature_store.update(market_view=self._market_store.view())
+        # . Update market store
+        self._market_store.ingest(event=event)
 
-        # 3. Build pre-trade view
+        # . Update feature store
+        feature_layer_step_record = self._feature_store.update(
+            context=step_context,
+            market_view=self._market_store.view,
+        )
+
+        # . Build pre-trade view
         view_before: BacktestView = self._build_view()
 
-        # 4. Run decision pipeline
+        # . Run decision pipeline
         decision = self._decision_pipeline.run(view=view_before)
 
-        # 5. Compute fifo operations
+        # . Compute fifo operations
         fifo_ops = self._transition_engine.process(
             decision=decision,
             portfolio_view=view_before.portfolio_view,
         )
 
-        # 6. Mutate portfolio
+        # . Mutate portfolio
         self._portfolio.apply_operations(fifo_ops)
 
-        # 7. Return step record
+        #
+
+        # . Return step record
         view_after = self._build_view()
         return StepRecord(
             timestamp=view_before.market_view.timestamp,
-            event=market_data_event,
+            event=event,
             view_before=view_before,
             decision=decision,
             transition_result=fifo_ops,
@@ -126,8 +146,9 @@ class BacktestEngine:
         self._logger.info("Running ...")
         for event in bt_input.events:
             event_count += 1
-            step_record = self.step(market_data_event=event)
+            step_record = self.step(event=event)
             step_records.append(step_record)
+            self._next_step_sequence+=1
             if first_ts is None:
                 first_ts = step_record.timestamp
             last_ts = step_record.timestamp
