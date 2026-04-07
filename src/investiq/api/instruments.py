@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from investiq.market_data import Currency, Exchange, AssetType
+from investiq.market_data.domain.enums import AssetType, Exchange, Currency
 
 
 @dataclass(frozen=True)

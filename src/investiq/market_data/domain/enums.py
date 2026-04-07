@@ -1,6 +1,5 @@
 from enum import Enum, auto
 
-
 class AssetType(Enum):
     FUTURE = auto()
     CONT_FUTURE = auto()
@@ -8,19 +7,15 @@ class AssetType(Enum):
     FOREX = auto()
     OPTION = auto()
 
-
 class WhatToShow(str, Enum):
     TRADES = "TRADES"
     MIDPOINT = "MIDPOINT"
 
-
 class Currency(str, Enum):
     USD = "USD"
 
-
 class Exchange(str, Enum):
     CME = "CME"
-    NYSE = "NYSE"
     IDEALPRO = "IDEALPRO"
     SMART = "SMART"
 

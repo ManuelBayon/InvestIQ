@@ -24,13 +24,11 @@ class HistoricalDataService:
         request: RequestSpec,
     ) -> pd.DataFrame:
 
-        self._logger.debug("Connecting data source...")
         self._data_source.connect()
 
         try:
             df = self._loader.load(instrument, request)
         finally:
-            self._logger.debug("Disconnecting data source...")
             self._data_source.disconnect()
 
         if "date" in df.columns:

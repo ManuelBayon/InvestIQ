@@ -1,9 +1,13 @@
-from collections.abc import Sequence, Mapping
+from collections.abc import Sequence
 from dataclasses import dataclass
 from enum import StrEnum
 from typing import Protocol
 
 import pandas as pd
+
+from investiq.api.instruments import Instrument
+from investiq.market_data.domain.enums import BarSize
+
 
 class MarketField(StrEnum):
     OPEN = "open"
@@ -29,32 +33,30 @@ class OHLCV:
     def __contains__(self, key: object) -> bool:
         return isinstance(key, str) and hasattr(self, key)
 
-    def items(self):
-        for k in ("open","high","low","close","volume"):
-            yield k, getattr(self, k)
-
 @dataclass(frozen=True)
 class MarketDataEvent:
+    event_id: str
     timestamp: pd.Timestamp
     bar: OHLCV
-    symbol: str | None = None
-    bar_size: str | None = None
+    instrument: Instrument
+    bar_size: BarSize
 
 class MarketHistoryReader(Protocol):
-    def latest(self, field: MarketField) -> float:...
-    def window(self, field: MarketField, n: int) -> tuple[float, ...]:...
-    def series(self, field: MarketField) -> Sequence[float]: ...
-    def fields(self) -> tuple[MarketField, ...]:...
+    def latest(self) -> MarketDataEvent:...
+    def window(self, n: int) -> Sequence[MarketDataEvent]:...
+    def series(self) -> Sequence[MarketDataEvent]: ...
     def __len__(self) -> int:...
 
 @dataclass(frozen=True)
-class MarketSateView:
-    snapshot: MarketDataEvent
-    history: MarketHistoryReader
+class MarketView:
+    reader: MarketHistoryReader
+    @property
+    def event_id(self) -> str:
+        return self.reader.latest().event_id
     @property
     def timestamp(self) -> pd.Timestamp:
-        return self.snapshot.timestamp
-
+        return self.reader.latest().timestamp
     @property
     def bar(self) -> OHLCV:
-        return self.snapshot.bar
+        return self.reader.latest().bar
+

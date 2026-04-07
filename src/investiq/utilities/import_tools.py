@@ -10,7 +10,7 @@ def import_submodules(
     """
     Dynamically import all submodules of a given package.
 
-    HF-grade utility for auto-discovering strategies/rules/guards
+    HF-grade utility for auto-discovering transitions/rules/guards
     without having to maintain manual imports.
 
     Args:

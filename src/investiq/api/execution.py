@@ -3,8 +3,9 @@ from dataclasses import dataclass, field
 
 import pandas as pd
 
+from investiq.api.backtest import RunId
 from investiq.api.instruments import Instrument
-from investiq.execution.portfolio.types import Fill
+from investiq.api.portfolio import Fill
 
 
 @dataclass(frozen=True)
@@ -24,7 +25,7 @@ class PortfolioStore:
 
 @dataclass(frozen=True)
 class RunResult:
-    run_id: str
+    run_id: RunId
     instrument: Instrument
     start: pd.Timestamp
     end: pd.Timestamp
@@ -35,3 +36,7 @@ class RunResult:
     metrics: Mapping[str, float]
     fill_log: Sequence[Fill]
     diagnostics: Mapping[str, object] = field(default_factory=dict)
+
+@dataclass(frozen=True)
+class DecisionStep:
+    ...

@@ -1,6 +1,7 @@
 from collections.abc import Iterator
 import pandas as pd
 
+from investiq.api.instruments import Instrument
 from investiq.api.market import MarketDataEvent, OHLCV
 from investiq.market_data.domain.enums import BarSize
 from investiq.utilities.logger.protocol import LoggerProtocol
@@ -11,13 +12,13 @@ class DataFrameBacktestFeed:
         self,
         logger: LoggerProtocol,
         df: pd.DataFrame,
-        symbol: str,
+        instrument: Instrument,
         bar_size: BarSize,
     ):
         # Store dependencies and input data
         self._logger = logger
         self._df = self._normalize(df)
-        self._symbol = symbol
+        self._instrument = instrument
         self._bar_size = bar_size
 
     def _normalize(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -60,7 +61,7 @@ class DataFrameBacktestFeed:
 
         # Local reference to the dataframe
         df = self._df
-        self._logger.debug(f"FEED events={len(df)}")
+        self._logger.info(f"FEED events={len(df)}")
 
         for row in df.itertuples():
             ts = row.Index
@@ -76,8 +77,9 @@ class DataFrameBacktestFeed:
                 raise ValueError(f"Invalid OHLC at {ts}")
 
             yield MarketDataEvent(
+                event_id="abc",
                 timestamp=ts,
                 bar=OHLCV(open=o, high=h, low=l, close=c, volume=v),
-                symbol=self._symbol,
+                instrument=self._instrument,
                 bar_size=self._bar_size,
             )

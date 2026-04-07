@@ -202,7 +202,7 @@ class BatchWriter[FormattedT, EncodedT](ABC):
             self._sink.commit()
             self._logger.debug("Sink committed successfully.")
 
-            # Step 3 — transition to committed
+            # Step 3 — transition_engine to committed
             self._state = BatchWriterState.COMMITTED
 
         except ExportError as e:

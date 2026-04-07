@@ -248,7 +248,7 @@ class BatchSink[EncodedT](Sink[EncodedT], ABC):
     def _commit(self) -> None:
         """
         Atomically persist all staged or buffered data.
-        Called exactly once during OPENED → COMMITTED transition.
+        Called exactly once during OPENED → COMMITTED transition_engine.
 
         Typical responsibilities:
           - Flush buffers and finalize writes.
@@ -282,7 +282,7 @@ class BatchSink[EncodedT](Sink[EncodedT], ABC):
     def _finalize_resources(self) -> None:
         """
         Release or close all resources after successful commit.
-        Called during COMMITTED → CLOSED transition.
+        Called during COMMITTED → CLOSED transition_engine.
 
         Typical responsibilities:
           - Close file handles, sockets, or DB cursors.
