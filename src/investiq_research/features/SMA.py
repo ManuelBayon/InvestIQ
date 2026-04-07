@@ -21,7 +21,7 @@ class SMA(FeatureCalculator):
         return f"sma_{self._window}"
 
     def calculate(self, market_view: MarketView) -> float | None:
-        close_seq = [event.bar.close for event in market_view.history.series()]
+        close_seq = [event.bar.close for event in market_view.reader.series()]
         if len(close_seq) < self._window:
             return None
         sma = sum(close_seq[-self._window:]) / self._window

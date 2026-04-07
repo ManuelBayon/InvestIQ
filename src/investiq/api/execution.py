@@ -3,6 +3,7 @@ from dataclasses import dataclass, field
 
 import pandas as pd
 
+from investiq.api.backtest import RunId
 from investiq.api.instruments import Instrument
 from investiq.api.portfolio import Fill
 
@@ -24,7 +25,7 @@ class PortfolioStore:
 
 @dataclass(frozen=True)
 class RunResult:
-    run_id: str
+    run_id: RunId
     instrument: Instrument
     start: pd.Timestamp
     end: pd.Timestamp

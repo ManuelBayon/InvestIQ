@@ -1,7 +1,8 @@
 from collections.abc import Sequence
 
 from investiq.api.events import FeatureStepEvent, StepContext
-from investiq.api.features import FeatureHistoryReader, FeatureCalculator, FeatureView, FeaturePoint, FeatureComputationResult
+from investiq.api.features import FeatureHistoryReader, FeatureCalculator, FeaturePoint, FeatureComputationResult, \
+    FeatureView
 from investiq.api.market import MarketView
 
 class InMemoryFeatureHistoryReader(FeatureHistoryReader):
@@ -27,7 +28,7 @@ class InMemoryFeatureHistoryReader(FeatureHistoryReader):
         if not self.contains(key):
             raise KeyError(f"Unknown key: {key}")
         if not self.has_data(key):
-            raise KeyError(f"Feature '{key}' has no published values yet.")
+            raise ValueError(f"Feature '{key}' has no published values yet.")
         seq = self._history[key]
         return seq[-1]
 
@@ -35,7 +36,10 @@ class InMemoryFeatureHistoryReader(FeatureHistoryReader):
         if not self.contains(key):
             raise KeyError(f"Unknown key: {key}")
         if not self.has_data(key, quantity=n):
-            raise KeyError(f"Feature '{key}' has not enough published values yet for quantity={n}.")
+            raise ValueError(
+                f"Feature '{key}' has not enough published values yet for quantity={n}. "
+                f"Has n={len(self._history[key])} values published yet."
+            )
         seq = self._history[key]
         return tuple(seq[-n:])
 
@@ -43,7 +47,7 @@ class InMemoryFeatureHistoryReader(FeatureHistoryReader):
         if not self.contains(key):
             raise KeyError(f"Unknown key: {key}")
         if not self.has_data(key):
-            raise KeyError(f"Feature '{key}' has no published values yet.")
+            raise ValueError(f"Feature '{key}' has no published values yet.")
         seq = self._history[key]
         return tuple(seq)
 
@@ -69,6 +73,7 @@ class FeatureStore:
         self._history_view = InMemoryFeatureHistoryReader(history=self._history)
         self._last_processed_step_sequence : int = -1
 
+
     def update(
             self,
             context: StepContext,
@@ -89,14 +94,15 @@ class FeatureStore:
             )
         if context.market_timestamp != market_view.timestamp:
             raise ValueError(
-                "StepContext.market_timestamp and MarketView.timestamp mismatch:"
+                "StepContext.market_timestamp mismatch with MarketView.timestamp"
                 f"{context.market_timestamp} != {market_view.timestamp}"
             )
 
         # 2. Initialization
         computation_results: list[FeatureComputationResult] = []
 
-        # 3. Update features if value is not None
+        # 3.1 Update features if value is not None
+        # 3.2 Append computation results to return FeatureStepEvent
         for calc in self._calculators:
 
             key = calc.key

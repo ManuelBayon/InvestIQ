@@ -49,14 +49,14 @@ class MarketHistoryReader(Protocol):
 
 @dataclass(frozen=True)
 class MarketView:
-    _reader: MarketHistoryReader
+    reader: MarketHistoryReader
     @property
     def event_id(self) -> str:
-        return self._reader.latest().event_id
+        return self.reader.latest().event_id
     @property
     def timestamp(self) -> pd.Timestamp:
-        return self._reader.latest().timestamp
+        return self.reader.latest().timestamp
     @property
     def bar(self) -> OHLCV:
-        return self._reader.latest().bar
+        return self.reader.latest().bar
 

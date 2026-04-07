@@ -5,8 +5,6 @@ import pandas as pd
 
 from investiq.api.market import MarketView
 
-
-
 @dataclass
 class FeaturePoint:
     timestamp: pd.Timestamp
@@ -27,11 +25,11 @@ class FeatureHistoryReader(Protocol):
     Feature history reader protocol.
     It is a wrapper around the FeatureStore class.
     """
+    def contains(self, key: str) -> bool:...
+    def has_data(self,  key: str, quantity: int = 1) -> bool:...
     def latest(self, key: str) -> FeaturePoint:...
     def window(self,  key: str, n: int) -> tuple[FeaturePoint, ...]:...
     def series(self,  key: str) -> tuple[FeaturePoint, ...]:...
-    def contains(self, key: str) -> bool:...
-    def has_data(self,  key: str, quantity: int = 1) -> bool:...
 
 @dataclass(frozen=True)
 class FeatureView:
@@ -55,6 +53,7 @@ class FeatureView:
 
     def series(self, key: str) -> tuple[FeaturePoint, ...]:
         return self._reader.series(key)
+
 
 @dataclass(frozen=True)
 class FeatureComputationResult:
