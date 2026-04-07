@@ -15,3 +15,5 @@ Engine Logs/
 Brouillon/
 .obsidian
 
+__pycache__
+*.pyc
