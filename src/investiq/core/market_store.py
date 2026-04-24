@@ -1,52 +1,33 @@
-from investiq.api.market import MarketDataEvent, MarketHistoryReader, MarketView
-from investiq.api.errors import ContextNotInitializedError
+from investiq.api.market import MarketDataEvent
+from investiq.api.errors import ContextNotInitializedError, BacktestInvariantError
 
-class InMemoryMarketHistoryReader(MarketHistoryReader):
-    """
-    Reads-only facade over internal market history storage.
-    No full-history copy on each read using latest() or window().
-    """
-    def __init__(
-            self,
-            history: list[MarketDataEvent]
-    ) -> None:
-        self._history = history
 
-    def latest(self) -> MarketDataEvent:
-        if not self._history:
-            raise ValueError("No enough data for n=0")
-        return self._history[-1]
-
-    def window(self, n: int) -> tuple[MarketDataEvent, ...]:
-        if n <= 0:
-            raise ValueError(f"n={n} must be > 0")
-        seq = self._history[-n:]
-        if not seq:
-            raise ValueError(f"No enough data for n={n}")
-        return tuple(seq)
-
-    def series(self) -> tuple[MarketDataEvent, ...]:
-        seq = self._history
-        if not seq:
-            raise ValueError(f"No enough data.")
-        return tuple(seq)
-
-    def __len__(self) -> int:
-        return len(self._history)
-
-class MarketStateStore:
+class MarketStore:
     """
     Internal mutable runtime store for market state.
     """
     def __init__(self):
         self._history: list[MarketDataEvent] = []
-        self._history_view = InMemoryMarketHistoryReader(self._history)
 
     def ingest(self, event: MarketDataEvent) -> None:
+        if self._history:
+            last_timestamp = self._history[-1].timestamp
+            if event.timestamp <= last_timestamp:
+                raise BacktestInvariantError(
+                    f"Non-monotonically increasing timestamp: "
+                    f"received={event.timestamp}, "
+                    f"last={last_timestamp}"
+                )
         self._history.append(event)
 
-    @property
-    def view(self) -> MarketView:
+    def latest(self) -> MarketDataEvent:
         if not self._history:
             raise ContextNotInitializedError("No MarketEvent processed yet")
-        return MarketView(self._history_view)
+        return self._history[-1]
+
+    def window(self, n: int) -> tuple[MarketDataEvent, ...]:
+        if n <= 0:
+            raise ValueError(f"n={n} must be > 0")
+        if len(self._history) < n:
+            raise ValueError(f"n={n} must be <= len(history)={len(self._history)}")
+        return tuple(self._history[-n:])

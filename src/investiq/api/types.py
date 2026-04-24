@@ -1,11 +1,9 @@
 import pandas as pd
 
-from investiq.core.transition_engine.enums import AtomicActionType, FIFOOperationType, FIFOSide
-
-
 from dataclasses import dataclass
 
-from investiq.core.transition_engine.enums import CurrentState, Event
+from investiq.api.enums import CurrentState, Event, FIFOOperationType, FIFOSide, AtomicActionType
+
 
 @dataclass(frozen=True)
 class TransitionLog:

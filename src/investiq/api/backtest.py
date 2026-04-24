@@ -3,9 +3,10 @@ from dataclasses import dataclass
 from typing import NewType
 
 from investiq.api.instruments import Instrument
-from investiq.api.market import MarketDataEvent, MarketView
-from investiq.api.portfolio import PortfolioView
+from investiq.api.market import MarketDataEvent
 from investiq.api.features import FeatureView
+from investiq.api.portfolio import PortfolioView
+from investiq.core.market_store import MarketView
 
 RunId = NewType("RunId", str)
 

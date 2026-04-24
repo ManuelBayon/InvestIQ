@@ -5,7 +5,7 @@ import pandas as pd
 from investiq.api.portfolio import Fill
 from investiq.export_engine.formatters.base_batch_formatter import BatchFormatter
 from investiq.utilities.logger.protocol import LoggerProtocol
-from investiq.utilities.time_utils import format_utc_offset
+from investiq.utilities.time import format_utc_offset
 
 
 class BacktestDataFrameFormatter(BatchFormatter[Fill, pd.DataFrame]):

@@ -1,17 +1,14 @@
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Protocol, Optional
+from typing import Protocol, Optional, ClassVar
 
 import pandas as pd
 
+from investiq.api.enums import FIFOSide, ExecutionSide
 from investiq.api.instruments import Instrument
-from investiq.core.transition_engine.enums import FIFOSide, ExecutionSide
-from investiq.core.transition_engine.types import FIFOPosition
+from investiq.api.types import FIFOPosition, FIFOOperation
 
-class PositionBookReader(Protocol):
-    def active(self, side: FIFOSide) -> tuple[FIFOPosition, ...]: ...
-    def all(self, side: FIFOSide) -> tuple[FIFOPosition, ...]: ...
-    def count_active(self, side: FIFOSide) -> float: ...
+
 
 @dataclass(frozen=True)
 class Fill:
@@ -37,12 +34,30 @@ class Fill:
 
     instrument_id: Optional[str] = None
 
-@dataclass
+
 class PortfolioView:
     instrument: Instrument
     current_position: float
     initial_cash: float
     cash: float
     realized_pnl: float
-    fifo_book: PositionBookReader
+    #fifo_book: PositionBookReader
     fill_log: Sequence[Fill]
+
+class PortfolioProtocol(Protocol):
+    instrument: Instrument
+    current_position: float
+    cash: float
+    realized_pnl: float
+    unrealized_pnl: float
+    fifo_queues: dict[FIFOSide, list[FIFOPosition]]
+
+
+class PortfolioExecutionStrategy(Protocol):
+    NAME: ClassVar[str]
+    def apply(
+        self,
+        portfolio: PortfolioProtocol,
+        operation: FIFOOperation,
+    ) -> Fill:
+        ...

@@ -1,5 +1,5 @@
-from investiq.api.market import MarketView
-from investiq.core.features_store import FeatureCalculator
+from investiq.api.feature_calculator import FeatureCalculator
+from investiq.api.market import MarketDataEvent
 
 class SMA(FeatureCalculator):
     """
@@ -16,13 +16,16 @@ class SMA(FeatureCalculator):
     def calculator_id(self) -> str:
         return f"SMA(window={self._window})"
 
-    @property
-    def key(self) -> str:
-        return f"sma_{self._window}"
+    def calculate(
+            self,
+            market_view: tuple[MarketDataEvent, ...]
+    ) -> float | None:
 
-    def calculate(self, market_view: MarketView) -> float | None:
-        close_seq = [event.bar.close for event in market_view.reader.series()]
+        close_seq = []
+        for event in market_view:
+            close_seq.append(event.bar.close)
+
         if len(close_seq) < self._window:
             return None
         sma = sum(close_seq[-self._window:]) / self._window
-        return sma
+        return float(sma)

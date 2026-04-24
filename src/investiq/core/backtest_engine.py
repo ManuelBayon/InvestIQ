@@ -4,16 +4,15 @@ from typing import List
 import pandas as pd
 
 from investiq.api.backtest import BacktestView, BacktestInput, RunId
-from investiq.api.events import StepContext
+from investiq.api.context import StepContext
+from investiq.api.enums import FIFOSide
 from investiq.api.execution import RunResult
 from investiq.api.market import MarketDataEvent
 from investiq.api.errors import BacktestInvariantError
 from investiq.core.features_store import FeatureStore
-from investiq.core.portfolio.portfolio import Portfolio
 from investiq.core.market_store import MarketStateStore
-from investiq.core.transition_engine.enums import FIFOSide
+from investiq.core.transition_resolver import resolve_transition
 from investiq.utilities.logger.factory import LoggerFactory
-from investiq.core.transition_engine.transition_engine import TransitionEngine
 from investiq.core.decision_pipeline import DecisionPipeline
 from investiq.runs.audit import StepRecord
 
@@ -27,7 +26,6 @@ class BacktestEngine:
             market_store: MarketStateStore,
             feature_store: FeatureStore,
             decision_pipeline: DecisionPipeline,
-            transition_engine: TransitionEngine,
             portfolio: Portfolio,
     ):
         self._logger = logger_factory.child("BacktestEngine").get()
@@ -37,9 +35,7 @@ class BacktestEngine:
 
         self._market_store = market_store
         self._feature_store = feature_store
-
         self._decision_pipeline = decision_pipeline
-        self._transition_engine = transition_engine
         self._portfolio = portfolio
 
     def _build_view(self) -> BacktestView:
@@ -83,14 +79,14 @@ class BacktestEngine:
     def _build_step_context(self, event: MarketDataEvent) -> StepContext:
         return StepContext(
             run_id=self._run_id,
-            step_sequence=self._next_step_sequence,
-            source_event_id=event.event_id,
-            market_timestamp=event.timestamp,
+            instrument=event.instrument,
+            bar_size=event.bar_size,
+            timestamp=event.timestamp,
         )
 
     def step(self, event: MarketDataEvent) -> StepRecord:
 
-        # . Build step context
+        # . Build current step context
         step_context = self._build_step_context(event)
 
         # . Update market store
@@ -102,35 +98,35 @@ class BacktestEngine:
             market_view=self._market_store.view,
         )
 
-        # . Build pre-trade view
+        # . Build pre-trade backtest view
         view_before: BacktestView = self._build_view()
 
         # . Run decision pipeline
-        decision = self._decision_pipeline.run(view=view_before)
+        decision = self._decision_pipeline.run(bt_view=view_before)
 
-        # . Compute fifo operations
-        fifo_ops = self._transition_engine.process(
+        # . Resolve atomic actions from decision
+        atomic_actions = resolve_transition(
             decision=decision,
             portfolio_view=view_before.portfolio_view,
         )
 
-        # . Mutate portfolio
-        self._portfolio.apply_operations(fifo_ops)
+        ################   REFACTOR UNDER THIS LINE   ################
 
-        #
+        # . Execution Instruction Resolver
+
+
+        # . Fill simulator
+
+
+        # . Accountability (portfolio)
+
+
+        ################   REFACTOR ABOVE THIS LINE   ################
 
         # . Return step record
         view_after = self._build_view()
         return StepRecord(
-            timestamp=view_before.market_view.timestamp,
-            event=event,
-            view_before=view_before,
-            decision=decision,
-            transition_result=fifo_ops,
-            view_after=view_after,
-            diagnostics={
-                "decision":decision.diagnostics,
-            },
+            ...
         )
 
     def run(self, bt_input: BacktestInput) -> RunResult:
@@ -139,19 +135,16 @@ class BacktestEngine:
         start_time = time.perf_counter()
         first_ts: pd.Timestamp | None = None
         last_ts: pd.Timestamp | None = None
-        event_count: int = 0
         step_records: List[StepRecord] = []
 
         # 2. Main loop over the events
-        self._logger.info("Running ...")
         for event in bt_input.events:
-            event_count += 1
             step_record = self.step(event=event)
             step_records.append(step_record)
-            self._next_step_sequence+=1
             if first_ts is None:
                 first_ts = step_record.timestamp
             last_ts = step_record.timestamp
+            self._next_step_sequence+=1
 
         # 3. Invariants
         if first_ts is None or last_ts is None:
@@ -159,19 +152,17 @@ class BacktestEngine:
 
         # 4. Final State
         final_view = self._build_view()
-        end_time = time.perf_counter()
-        runtime_duration = end_time - start_time
-        self._logger.info("Run success.")
+        stop_time = time.perf_counter()
+        runtime_duration = stop_time - start_time
 
         # 5. Export run artefact
         return RunResult(
-            run_id="run_id",
+            run_id=RunId("#RunId"),
             instrument=bt_input.instrument,
             start=first_ts,
             end=last_ts,
-            event_count=event_count,
+            event_count=self._next_step_sequence,
             runtime_duration=runtime_duration,
             metrics=self._build_metrics(),
             fill_log=final_view.portfolio_view.fill_log,
-            diagnostics={}
         )

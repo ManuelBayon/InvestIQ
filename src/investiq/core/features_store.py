@@ -1,9 +1,11 @@
 from collections.abc import Sequence
+from datetime import datetime
 
-from investiq.api.events import FeatureStepEvent, StepContext
-from investiq.api.features import FeatureHistoryReader, FeatureCalculator, FeaturePoint, FeatureComputationResult, \
-    FeatureView
-from investiq.api.market import MarketView
+from investiq.api.context import StepContext
+from investiq.api.events import FeatureStepEvent
+from investiq.api.features import FeatureHistoryReader, FeatureCalculator, FeaturePoint
+from investiq.api.market import MarketDataEvent
+
 
 class InMemoryFeatureHistoryReader(FeatureHistoryReader):
     """
@@ -43,14 +45,6 @@ class InMemoryFeatureHistoryReader(FeatureHistoryReader):
         seq = self._history[key]
         return tuple(seq[-n:])
 
-    def series(self,  key: str) -> tuple[FeaturePoint, ...]:
-        if not self.contains(key):
-            raise KeyError(f"Unknown key: {key}")
-        if not self.has_data(key):
-            raise ValueError(f"Feature '{key}' has no published values yet.")
-        seq = self._history[key]
-        return tuple(seq)
-
 
 class FeatureStore:
     """
@@ -64,39 +58,28 @@ class FeatureStore:
 
         # 1. Check pre-conditions
         self._calculators = tuple(calculators)
-        keys = tuple(calc.key for calc in self._calculators)
-        if len(set(keys)) != len(keys):
-            raise ValueError(f"Duplicate feature keys: {keys}")
+        calc_ids = tuple(calc.calculator_id for calc in self._calculators)
+        if len(set(calc_ids)) != len(calc_ids):
+            raise ValueError(f"Duplicate feature keys: {calc_ids}")
 
         # 2. Initialize attributes
-        self._history: dict[str, list[FeaturePoint]] = {key: [] for key in keys}
+        self._history: dict[str, list[FeaturePoint]] = {calc_id: [] for calc_id in calc_ids}
         self._history_view = InMemoryFeatureHistoryReader(history=self._history)
         self._last_processed_step_sequence : int = -1
+        self._last_processed_timestamp : datetime | None = None
+        self._last_processed_event_id: str | None = None
 
 
     def update(
             self,
             context: StepContext,
-            market_view: MarketView
+            market_view: tuple[MarketDataEvent, ...]
     ) -> FeatureStepEvent:
 
+        last_event = market_view[-1]
+
         # 1. Check pre-conditions
-        expected_step_seq = self._last_processed_step_sequence + 1
-        if context.step_sequence != expected_step_seq:
-            raise ValueError(
-                "StepContext.step_sequence mismatch with last_processed_step_sequence(+1) :"
-                f"{context.step_sequence} != {self._last_processed_step_sequence + 1}"
-            )
-        if context.source_event_id != market_view.event_id:
-            raise ValueError(
-                "context.source_event_id mismatch with market_view.event_id :"
-                f"{context.source_event_id} != {market_view.event_id}"
-            )
-        if context.market_timestamp != market_view.timestamp:
-            raise ValueError(
-                "StepContext.market_timestamp mismatch with MarketView.timestamp"
-                f"{context.market_timestamp} != {market_view.timestamp}"
-            )
+        # ...
 
         # 2. Initialization
         computation_results: list[FeatureComputationResult] = []
@@ -104,35 +87,32 @@ class FeatureStore:
         # 3.1 Update features if value is not None
         # 3.2 Append computation results to return FeatureStepEvent
         for calc in self._calculators:
-
-            key = calc.key
             value = calc.calculate(market_view=market_view)
-
             if value is None:
                 computation_results.append(
                     FeatureComputationResult(
                         calculator_id=calc.calculator_id,
-                        key=calc.key,
                         value=value,
                     )
                 )
                 continue
 
             point = FeaturePoint(
-                timestamp=market_view.timestamp,
+                timestamp=last_event.timestamp,
                 value=value
             )
             computation_results.append(
                 FeatureComputationResult(
                     calculator_id=calc.calculator_id,
-                    key=calc.key,
                     value=point.value,
                 )
             )
-            self._history[key].append(point)
+            self._history[calc.calculator_id].append(point)
 
-        # 4. Save last timestamp processed
+        # 4. Save last processed recorded variables
         self._last_processed_step_sequence = context.step_sequence
+        self._last_processed_timestamp = last_event.timestamp
+        self._last_processed_event_id = last_event.event_id
 
         # 5. Build step record
         return FeatureStepEvent(
@@ -141,6 +121,8 @@ class FeatureStore:
         )
 
 
-    @property
-    def view(self) -> FeatureView:
-        return FeatureView(_reader=self._history_view)
+    def latest(self, key) -> FeaturePoint:
+        ...
+
+    def window(self) -> tuple[FeaturePoint, ...]:
+        ...

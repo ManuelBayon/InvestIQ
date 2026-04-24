@@ -2,7 +2,7 @@ from collections.abc import Mapping
 
 from investiq.api.config import BacktestConfig
 from investiq.api.execution import RunResult
-from investiq.core.transition_engine.enums import FIFOSide
+from investiq.utilities.log_operations import FIFOSide
 
 
 def line(label: str, value: str, width: int = 25) -> str:

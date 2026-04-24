@@ -1,33 +1,10 @@
-"""
-investiq/execution/transition_engine/transitions/builtins.py
-
-Concrete built-in transition_engine transitions (single-file).
-Goal: onboarding-friendly, desk-grade invariants, minimal moving parts.
-
-Contract:
-- Each strategy exposes NAME: ClassVar[str]
-- resolve(...) is keyword-only to avoid call-site ambiguity
-- resolve returns a list[AtomicAction] representing the atomic execution plan
-
-Registration:
-- Each strategy is registered via @register_transition_strategy(TransitionType.*)
-"""
-
-from __future__ import annotations
-
-from datetime import datetime
-from typing import ClassVar, Final
+from typing import Final, ClassVar
 
 import pandas as pd
 
-from investiq.core.transition_engine.enums import AtomicActionType, TransitionType
-from investiq.core.transition_engine.types import AtomicAction
-from investiq.core.transition_engine.transitions.registry import register_transition_strategy
-
-
-# -----------------------------
-# Internal helpers (small, explicit)
-# -----------------------------
+from investiq.api.enums import AtomicActionType, TransitionType
+from investiq.api.transitions import TransitionStrategy
+from investiq.api.types import AtomicAction
 
 _EPS: Final[float] = 0.0  # keep exact comparisons; change to e.g. 1e-12 if you later use floats from numerics
 
@@ -57,18 +34,16 @@ def _open_short(*, qty: float, ts: pd.Timestamp) -> AtomicAction:
 # Concrete transitions (registered)
 # -----------------------------
 
-@register_transition_strategy(TransitionType.NO_OP)
 class NoOpStrategy:
     """
     No operation: current_position already equals target_position.
     """
     NAME: ClassVar[str] = "NoOp"
     def resolve(
-        self,
-        *,
-        timestamp: pd.Timestamp,
-        current_position: float,
-        target_position: float,
+            self,
+            timestamp: pd.Timestamp,
+            current_position: float,
+            target_position: float,
     ) -> list[AtomicAction]:
         _require(
             current_position == target_position,
@@ -77,7 +52,6 @@ class NoOpStrategy:
         return []
 
 
-@register_transition_strategy(TransitionType.OPEN_LONG)
 class OpenLongStrategy:
     """
     Open a new long position from flat.
@@ -85,11 +59,10 @@ class OpenLongStrategy:
     NAME: ClassVar[str] = "OpenLong"
 
     def resolve(
-        self,
-        *,
-        timestamp: pd.Timestamp,
-        current_position: float,
-        target_position: float,
+            self,
+            timestamp: pd.Timestamp,
+            current_position: float,
+            target_position: float,
     ) -> list[AtomicAction]:
         _require(
             current_position == 0.0,
@@ -102,7 +75,6 @@ class OpenLongStrategy:
         return [_open_long(qty=target_position, ts=timestamp)]
 
 
-@register_transition_strategy(TransitionType.OPEN_SHORT)
 class OpenShortStrategy:
     """
     Open a new short position from flat.
@@ -127,7 +99,6 @@ class OpenShortStrategy:
         return [_open_short(qty=abs(target_position), ts=timestamp)]
 
 
-@register_transition_strategy(TransitionType.CLOSE_LONG)
 class CloseLongStrategy:
     """
     Fully close an existing long position to flat.
@@ -152,7 +123,6 @@ class CloseLongStrategy:
         return [_close_long(qty=current_position, ts=timestamp)]
 
 
-@register_transition_strategy(TransitionType.CLOSE_SHORT)
 class CloseShortStrategy:
     """
     Fully close an existing short position to flat.
@@ -177,7 +147,6 @@ class CloseShortStrategy:
         return [_close_short(qty=abs(current_position), ts=timestamp)]
 
 
-@register_transition_strategy(TransitionType.INCREASE_LONG)
 class IncreaseLongStrategy:
     """
     Increase an existing long position (stay long).
@@ -203,7 +172,6 @@ class IncreaseLongStrategy:
         return [_open_long(qty=delta, ts=timestamp)]
 
 
-@register_transition_strategy(TransitionType.INCREASE_SHORT)
 class IncreaseShortStrategy:
     """
     Increase an existing short position (become more negative).
@@ -229,7 +197,6 @@ class IncreaseShortStrategy:
         return [_open_short(qty=delta, ts=timestamp)]
 
 
-@register_transition_strategy(TransitionType.REDUCE_LONG)
 class ReduceLongStrategy:
     """
     Reduce an existing long without closing (stay long).
@@ -259,7 +226,6 @@ class ReduceLongStrategy:
         return [_close_long(qty=delta, ts=timestamp)]
 
 
-@register_transition_strategy(TransitionType.REDUCE_SHORT)
 class ReduceShortStrategy:
     """
     Reduce an existing short without closing (stay short, closer to zero).
@@ -289,7 +255,6 @@ class ReduceShortStrategy:
         return [_close_short(qty=delta, ts=timestamp)]
 
 
-@register_transition_strategy(TransitionType.REVERSAL_TO_LONG)
 class ReversalToLongStrategy:
     """
     Reverse from short to long:
@@ -319,7 +284,6 @@ class ReversalToLongStrategy:
         ]
 
 
-@register_transition_strategy(TransitionType.REVERSAL_TO_SHORT)
 class ReversalToShortStrategy:
     """
     Reverse from long to short:
@@ -347,3 +311,17 @@ class ReversalToShortStrategy:
             _close_long(qty=current_position, ts=timestamp),
             _open_short(qty=abs(target_position), ts=timestamp),
         ]
+
+STRATEGY_BY_TRANSITION : dict[TransitionType, type[TransitionStrategy]] = {
+    TransitionType.NO_OP: NoOpStrategy,
+    TransitionType.OPEN_LONG: OpenLongStrategy,
+    TransitionType.OPEN_SHORT: OpenShortStrategy,
+    TransitionType.CLOSE_LONG: CloseLongStrategy,
+    TransitionType.CLOSE_SHORT: CloseShortStrategy,
+    TransitionType.INCREASE_LONG: IncreaseLongStrategy,
+    TransitionType.INCREASE_SHORT: IncreaseShortStrategy,
+    TransitionType.REDUCE_LONG: ReduceLongStrategy,
+    TransitionType.REDUCE_SHORT: ReduceShortStrategy,
+    TransitionType.REVERSAL_TO_LONG: ReversalToLongStrategy,
+    TransitionType.REVERSAL_TO_SHORT: ReversalToShortStrategy,
+}

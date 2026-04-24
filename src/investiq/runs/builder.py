@@ -7,11 +7,9 @@ from investiq.api.instruments import Instrument
 from investiq.api.strategy import Strategy
 from investiq.core.backtest_engine import BacktestEngine
 from investiq.core.features_store import FeatureStore
-from investiq.core.market_store import MarketStateStore
 
-from investiq.core.portfolio.portfolio import Portfolio
-from investiq.core.transition_engine.transition_engine import TransitionEngine
 from investiq.core.decision_pipeline import DecisionPipeline
+from investiq.core.market_store import MarketStore
 from investiq.utilities.logger.factory import LoggerFactory
 
 
@@ -24,7 +22,7 @@ def bootstrap_backtest_engine(
         initial_cash: float = 100_000,
 ) -> BacktestEngine:
 
-    market_store = MarketStateStore()
+    market_store = MarketStore()
 
     feature_store = FeatureStore(
         calculators=feature_calculators,

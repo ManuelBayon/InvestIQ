@@ -1,6 +1,6 @@
 from investiq.export_engine.registries.components.backtest import BacktestExportRegistry
 from investiq.export_engine.registries.config import ExportKey
-from investiq.utilities.import_tools import import_submodules
+from investiq.utilities.imports import import_submodules
 from investiq.utilities.logger.protocol import LoggerProtocol
 
 
