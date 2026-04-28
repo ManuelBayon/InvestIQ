@@ -10,4 +10,5 @@ class StepContext:
     run_id: str
     instrument: Instrument
     bar_size: BarSize
+    event_id: str
     timestamp: datetime

@@ -1,14 +1,6 @@
-from dataclasses import dataclass
-from datetime import datetime
 from typing import Protocol
 
 from investiq.api.market import MarketDataEvent
-
-@dataclass(frozen=True)
-class FeaturePoint:
-    calculator_id: str
-    timestamp: datetime
-    value: float | None
 
 class FeatureCalculator(Protocol):
     """

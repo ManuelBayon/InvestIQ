@@ -21,10 +21,7 @@ class SMA(FeatureCalculator):
             market_view: tuple[MarketDataEvent, ...]
     ) -> float | None:
 
-        close_seq = []
-        for event in market_view:
-            close_seq.append(event.bar.close)
-
+        close_seq = [event.bar.close for event in market_view]
         if len(close_seq) < self._window:
             return None
         sma = sum(close_seq[-self._window:]) / self._window
