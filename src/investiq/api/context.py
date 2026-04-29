@@ -7,8 +7,9 @@ from investiq.market_data.domain.enums import BarSize
 
 @dataclass(frozen=True)
 class StepContext:
-    run_id: str
     instrument: Instrument
     bar_size: BarSize
+    run_id: str
+    step_sequence: int
     event_id: str
     timestamp: datetime

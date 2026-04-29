@@ -20,7 +20,6 @@ class SMA(FeatureCalculator):
             self,
             market_view: tuple[MarketDataEvent, ...]
     ) -> float | None:
-
         close_seq = [event.bar.close for event in market_view]
         if len(close_seq) < self._window:
             return None
